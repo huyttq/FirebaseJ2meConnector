@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.cubeia.firebase.clients.java.connector;
-
+import java.math.BigInteger;
 
 public class CryptoConstants {
 
@@ -27,6 +27,7 @@ public class CryptoConstants {
 	
 	public static final int RSA_KEY_SIZE = 512;
 	
+	public static final BigInteger RSA_KEY_EXPONENT = new BigInteger("10001", 16);
 
 	public static final long DEFAULT_KEY_ECHANGE_WAIT = 5000;
 	
