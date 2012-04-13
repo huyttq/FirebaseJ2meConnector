@@ -6,6 +6,7 @@
 
 package edu.emory.mathcs.backport.java.util.concurrent.atomic;
 
+import j2me.io.Serializable;
 import j2me.lang.Number;
 
 /**
@@ -21,7 +22,7 @@ import j2me.lang.Number;
  * @since 1.5
  * @author Doug Lea
 */
-public class AtomicInteger extends Number implements java.io.Serializable {
+public class AtomicInteger extends Number implements Serializable {
     private static final long serialVersionUID = 6214790243416807050L;
 
     private volatile int value;

@@ -4,9 +4,15 @@
  */
 package org.huy.firebase.clients.j2me.connector;
 
+import com.cubeia.firebase.clients.java.connector.CryptoConstants;
+import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.engines.RSAEngine;
+import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
+import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 
 /**
  *
@@ -14,15 +20,29 @@ import org.bouncycastle.crypto.engines.RSAEngine;
  * Linh
  */
 public class RSACryptoProvider {
-	private CipherParameters key;
+	private RSAEngine engine;
 	
-	public RSACryptoProvider(CipherParameters key) {
-		this.key = key;
+	public RSACryptoProvider() {
+		this.engine = new RSAEngine();		
 	}
 	
-	public byte[] decrypt(byte[] data) {
-		RSAEngine engine = new RSAEngine();		
-		engine.init(false, key);
+	public byte[] decrypt(byte[] data, CipherParameters privateKey) {
+		return process(data, false, privateKey);
+	}
+	
+	public byte[] encrypt(byte[] data, CipherParameters publicKey) {
+		return process(data, true, publicKey);
+	}
+	
+	public static AsymmetricCipherKeyPair generateRSAKey() throws GeneralSecurityException {
+		RSAKeyPairGenerator generator = new RSAKeyPairGenerator();
+		RSAKeyGenerationParameters spec = new RSAKeyGenerationParameters(CryptoConstants.RSA_KEY_EXPONENT, new SecureRandom(), CryptoConstants.RSA_KEY_SIZE, 80);
+		generator.init(spec);		
+		return generator.generateKeyPair();
+	}
+
+	private byte[] process(byte[] data, boolean encrypt, CipherParameters key){
+		engine.init(encrypt, key);
 		int blockSize = engine.getInputBlockSize();
 		int length = blockSize;
 		int offset = 0;
@@ -41,8 +61,8 @@ public class RSACryptoProvider {
 		}		
 		return processResult(result, outputLength);
 	}
-
-	private byte[] processResult(ArrayList result, int totalLength) {
+	
+	private static byte[] processResult(ArrayList result, int totalLength) {
 		byte[] output = new byte[totalLength];
 		int curPos = 0;
 		for(int i = 0; i < result.size(); i++) {

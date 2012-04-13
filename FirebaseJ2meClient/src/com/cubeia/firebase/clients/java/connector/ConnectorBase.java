@@ -17,6 +17,7 @@
 package com.cubeia.firebase.clients.java.connector;
 
 import com.cubeia.firebase.api.util.Arguments;
+import com.heaton.threads.ThreadPool;
 import j2me.util.ArrayList;
 import j2me.util.List;
 import j2me.util.logging.Logger;
@@ -24,7 +25,7 @@ import j2me.util.logging.Logger;
 
 public abstract class ConnectorBase implements Connector {
 
-	protected final ExecutorService dispatcher = Executors.newSingleThreadExecutor();	
+	protected final ThreadPool dispatcher = new ThreadPool(1); // using single thread pool here
 	protected final Logger log = Logger.getLogger("SocketConnector");
 	
 	protected final List listeners = new ArrayList();

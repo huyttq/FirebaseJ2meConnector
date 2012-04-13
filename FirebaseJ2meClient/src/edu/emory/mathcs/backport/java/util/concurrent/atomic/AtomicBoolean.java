@@ -6,6 +6,8 @@
 
 package edu.emory.mathcs.backport.java.util.concurrent.atomic;
 
+import j2me.io.Serializable;
+
 /**
  * A {@code boolean} value that may be updated atomically. See the
  * {@link edu.emory.mathcs.backport.java.util.concurrent.atomic} package specification for
@@ -17,7 +19,7 @@ package edu.emory.mathcs.backport.java.util.concurrent.atomic;
  * @since 1.5
  * @author Doug Lea
  */
-public class AtomicBoolean implements java.io.Serializable {
+public class AtomicBoolean implements Serializable {
     private static final long serialVersionUID = 4654671469794556979L;
 
     private volatile int value;

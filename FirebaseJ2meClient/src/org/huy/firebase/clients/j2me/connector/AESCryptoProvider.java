@@ -22,6 +22,7 @@ public class AESCryptoProvider implements CryptoProvider {
 
 	private SessionKey sessionKey;
 	private BufferedBlockCipher bufferedBlockCipher;
+	private CipherParameters cipherParams;
 
 	public AESCryptoProvider() {	
 		
@@ -35,13 +36,10 @@ public class AESCryptoProvider implements CryptoProvider {
 		if (sessionKey == null) {
 			throw new RuntimeException("SESSION KEY IS NULL, CANNOT DECRYPT PACKET.");
 		}
-
 		try {
-			byte[] iv = new byte[16];
-			CipherParameters cipherParameters = new ParametersWithIV(new KeyParameter(sessionKey.getEncoded()), iv);
-			return doEncrypt(clearTextData, bufferedBlockCipher, cipherParameters);
-		} catch (Exception e) {
-			System.out.println("encrypt exception " + e);
+			return process(clearTextData, this.bufferedBlockCipher, this.cipherParams, true);
+		} catch (InvalidCipherTextException ex) {
+			ex.printStackTrace();
 			return null;
 		}
 	}
@@ -50,21 +48,18 @@ public class AESCryptoProvider implements CryptoProvider {
 		if (sessionKey == null) {
 			throw new RuntimeException("SESSION KEY IS NULL, CANNOT DECRYPT PACKET.");
 		}
-
 		try {
-			byte[] iv = new byte[16];
-			CipherParameters cipherParameters = new ParametersWithIV(new KeyParameter(sessionKey.getEncoded()), iv);
-			//CipherParameters cipherParameters = new KeyParameter(sessionKey.getEncoded());
-			return doDecrypt(clearTextData, bufferedBlockCipher, cipherParameters);
-
-		} catch (Exception e) {
-			System.out.println("decrypt exception " + e);
+			return process(clearTextData, this.bufferedBlockCipher, this.cipherParams, false);
+		} catch (InvalidCipherTextException ex) {
+			ex.printStackTrace();
 			return null;
 		}
 	}
 
 	public void setSessionKey(SessionKey sessionKey) {
 		this.sessionKey = sessionKey;
+		byte[] iv = new byte[16];
+		this.cipherParams = new ParametersWithIV(new KeyParameter(sessionKey.getEncoded()), iv);
 	}
 
 	public SessionKey getSessionKey() {
@@ -73,16 +68,6 @@ public class AESCryptoProvider implements CryptoProvider {
 
 	public void createSessionKey() throws SecurityException {
 		throw new UnsupportedOperationException();
-	}
-
-	private byte[] doEncrypt(byte[] input, BufferedBlockCipher bufferedBlockCipher, CipherParameters cipherParameters) throws InvalidCipherTextException {
-		boolean forEncryption = true;
-		return process(input, bufferedBlockCipher, cipherParameters, forEncryption);
-	}
-
-	private byte[] doDecrypt(byte[] input, BufferedBlockCipher bufferedBlockCipher, CipherParameters cipherParameters) throws InvalidCipherTextException {
-		boolean forEncryption = false;
-		return process(input, bufferedBlockCipher, cipherParameters, forEncryption);
 	}
 
 	private byte[] process(byte[] input, BufferedBlockCipher bufferedBlockCipher, CipherParameters cipherParameters, boolean forEncryption) throws InvalidCipherTextException {

@@ -6,6 +6,8 @@
 
 package edu.emory.mathcs.backport.java.util.concurrent.atomic;
 
+import j2me.io.Serializable;
+
 /**
  * An object reference that may be updated atomically. See the {@link
  * edu.emory.mathcs.backport.java.util.concurrent.atomic} package specification for description
@@ -13,7 +15,7 @@ package edu.emory.mathcs.backport.java.util.concurrent.atomic;
  * @since 1.5
  * @author Doug Lea
  */
-public class AtomicReference  implements java.io.Serializable {
+public class AtomicReference  implements Serializable {
     private static final long serialVersionUID = -1848883965231344442L;
 
     private volatile Object value;
