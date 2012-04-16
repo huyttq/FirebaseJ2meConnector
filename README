@@ -1,32 +1,30 @@
 1. Download and install Netbeans and J2ME SDK 3.05
 2. Build FirebaseJ2meClientTest project and run tests
 3. Connection example:
-<pre>
     try {
-			SocketConnector connector = new SocketConnector("localhost", 4123);
-			connector.connect();
+	SocketConnector connector = new SocketConnector("localhost", 4123);
+	connector.connect();
 
-			LoginListener listener = new LoginListener();
-			connector.addListener(listener);
-			LoginRequestPacket pak = new LoginRequestPacket();
-			pak.user = "test";
-			pak.password = "1234";
-			pak.operatorid = 0;
-			connector.send(pak);
+	LoginListener listener = new LoginListener();
+	connector.addListener(listener);
+	LoginRequestPacket pak = new LoginRequestPacket();
+	pak.user = "test";
+	pak.password = "1234";
+	pak.operatorid = 0;
+	connector.send(pak);
 
       // This is just an example to wait for result, you should implement call back listener
-			while (listener.loginPacket == null) {
-				try {
-					Thread.sleep(50);
-				} catch (InterruptedException ex) {
-				}
-			}
-
-			LoginResponsePacket result = (LoginResponsePacket) listener.loginPacket;
-			// Get pid of current login user: result.pid;
-			connector.disconnect();
-
-		} catch (GeneralSecurityException ex) {			
-		} catch (IOException ex) {			
+	while (listener.loginPacket == null) {
+		try {
+			Thread.sleep(50);
+		} catch (InterruptedException ex) {
 		}
-</pre>
+	}
+
+	LoginResponsePacket result = (LoginResponsePacket) listener.loginPacket;
+	// Get pid of current login user: result.pid;
+	connector.disconnect();
+
+	} catch (GeneralSecurityException ex) {			
+	} catch (IOException ex) {			
+	}
