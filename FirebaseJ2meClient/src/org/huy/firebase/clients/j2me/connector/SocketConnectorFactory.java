@@ -16,8 +16,8 @@
  */
 package org.huy.firebase.clients.j2me.connector;
 
-import com.cubeia.firebase.clients.java.connector.Connector;
 import com.cubeia.firebase.clients.java.connector.ConnectorFactory;
+import com.cubeia.firebase.clients.java.connector.FirebaseConnector;
 import com.cubeia.firebase.clients.java.connector.SecurityConfig;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -34,11 +34,11 @@ public class SocketConnectorFactory implements ConnectorFactory {
 	
 	public void start() throws IOException { }
 
-	public Connector createConnector() throws IOException, GeneralSecurityException {
+	public FirebaseConnector createConnector() throws IOException, GeneralSecurityException {
 		return createConnector(null);
 	}
 
-	public Connector createConnector(SecurityConfig conf) throws IOException, GeneralSecurityException {
+	public FirebaseConnector createConnector(SecurityConfig conf) throws IOException, GeneralSecurityException {
 		if(conf == null) {
 			return new SocketConnector(host, port);
 		} else {

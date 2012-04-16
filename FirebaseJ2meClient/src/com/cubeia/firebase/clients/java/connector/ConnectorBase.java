@@ -23,7 +23,7 @@ import j2me.util.List;
 import j2me.util.logging.Logger;
 
 
-public abstract class ConnectorBase implements Connector {
+public abstract class ConnectorBase implements FirebaseConnector {
 
 	protected final ThreadPool dispatcher = new ThreadPool(1); // using single thread pool here
 	protected final Logger log = Logger.getLogger("SocketConnector");

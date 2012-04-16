@@ -23,9 +23,9 @@ public interface ConnectorFactory {
 
 	public abstract void start() throws IOException;
 	
-	public Connector createConnector() throws IOException, GeneralSecurityException;
+	public FirebaseConnector createConnector() throws IOException, GeneralSecurityException;
 	
-	public Connector createConnector(SecurityConfig conf) throws IOException, GeneralSecurityException;
+	public FirebaseConnector createConnector(SecurityConfig conf) throws IOException, GeneralSecurityException;
 
 	public abstract void stop();
 

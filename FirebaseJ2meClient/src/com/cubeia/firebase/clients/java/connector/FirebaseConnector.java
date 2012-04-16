@@ -20,7 +20,7 @@ import com.cubeia.firebase.io.ProtocolObject;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 
-public interface Connector {
+public interface FirebaseConnector {
 
 	/**
 	 * @param handler Packet listener, must not be null
