@@ -46,15 +46,16 @@ public class TestSocketConnector {
 		pak.operatorid = 0;
 		connector.send(pak);
 
-		while (listener.loginPacket == null) {
-			try {
-				Thread.sleep(50);
-				// TODO: add timeout or any better approach?
-			} catch (InterruptedException ex) {
-			}
+		LoginResponsePacket re = null;
+		try {
+			while(re == null) {
+				re = (LoginResponsePacket) connector.read();
+			} 
+		}catch (Exception ex) {
 		}
+		
 		LoginResponsePacket result = (LoginResponsePacket) listener.loginPacket;
 		connector.disconnect();
-		assertEquals("123", result.pid);
+		assertEquals("1234", result.pid);
 	}
 }

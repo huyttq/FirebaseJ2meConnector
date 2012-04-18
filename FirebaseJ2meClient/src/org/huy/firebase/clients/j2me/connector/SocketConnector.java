@@ -26,152 +26,141 @@ import com.jmobilecore.comm.BufferedInputStream;
 import com.jmobilecore.comm.BufferedOutputStream;
 import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicBoolean;
 import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicReference;
+import j2me.nio.ByteBuffer;
 import j2me.util.logging.Level;
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
+import javax.microedition.io.Connector;
 import javax.microedition.io.SocketConnection;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 
-/**
- * This class handler the socket communication for a client. It contains a styx
- * serializer for Firebase protocol objects. It uses a separate thread to hand off
- * objects to listeners.
- * 
- * <p>This class supports encrypted connections of two kinds. 1) ordinary SSL, either
- * via normal SSL certificates or "naive" encryption accepting any server certificate; or
- * 2) native Firebase packet encryption.
- * 
- * @author larsan
- */
 public class SocketConnector extends ConnectorBase {
-	
+
 	private final StyxSerializer styx = new StyxSerializer(new ProtocolObjectFactory());
-	
 	private SocketConnection socket;
 	private StreamReader reader;
 	private StreamWriter writer;
-	
 	private final Encryption encryption;
-	
 	private AsymmetricCipherKeyPair keyExchange;
-	
 	//AES cryptoProvider
 	private AtomicReference crypto = new AtomicReference(null);
 	private RSACryptoProvider rsaCrypto = new RSACryptoProvider();
-	
 	private long keyExchangeWait = CryptoConstants.DEFAULT_KEY_ECHANGE_WAIT;
-	
 	private final String host;
 	private final int port;
-	
 	// use OutputStream to send requests
-  private DataOutputStream dataOutputStream = null;  
-  // use InputStream to receive responses from server
-  private DataInputStream dataInputStream = null;
-	
+	private DataOutputStream dataOutputStream = null;
+	// use InputStream to receive responses from server
+	private DataInputStream dataInputStream = null;
+
 	/**
-	 * @param host Host to connect to, must not be null
-	 * @param port Port to connect to, must be > 0
-	 * @param listener Initial listener, may be null
-	 * @param encryption Encryption to use, or null for none
-	 * @param useHandshake True if handshake should be used, false otherwise
-	 * @param handshakeSignature Handshake to use if "useHandshake" is true
-	 * @throws IOException On general IO errors
-	 * @throws GeneralSecurityException On SSL errors
-	 */
-	public SocketConnector(String host, int port, PacketListener listener, Encryption encryption, boolean useHandshake, int handshakeSignature) throws IOException, GeneralSecurityException { 
+	* @param host Host to connect to, must not be null
+	* @param port Port to connect to, must be > 0
+	* @param listener Initial listener, may be null
+	* @param encryption Encryption to use, or null for none
+	* @param useHandshake True if handshake should be used, false otherwise
+	* @param handshakeSignature Handshake to use if "useHandshake" is true
+	* @throws IOException On general IO errors
+	* @throws GeneralSecurityException On SSL errors
+	*/
+	public SocketConnector(String host, int port, PacketListener listener, Encryption encryption, boolean useHandshake, int handshakeSignature) throws IOException, GeneralSecurityException {
 		super(useHandshake, handshakeSignature);
 		Arguments.notNull(host, "host");
-		if(listener != null) {
+		if (listener != null) {
 			addListener(listener);
 		}
 		this.encryption = (encryption == null ? Encryption.NONE : encryption);
 		this.host = host;
 		this.port = port;
 	}
-	
-	
-	/**
-	 * @param host Host to connect to, must not be null
-	 * @param port Port to connect to, must be > 0
-	 * @param encryption Encryption to use, or null
-	 * @param useHandshake True if handshake should be used, false otherwise
-	 * @param handshakeSignature Handshake to use if "useHandshake" is true
-	 * @throws IOException On general IO errors
-	 * @throws GeneralSecurityException On SSL errors
-	 */
-	public SocketConnector(String host, int port, Encryption encryption, boolean useHandshake, int handshakeSignature) throws IOException, GeneralSecurityException { 
+
+/**
+	* @param host Host to connect to, must not be null
+	* @param port Port to connect to, must be > 0
+	* @param encryption Encryption to use, or null
+	* @param useHandshake True if handshake should be used, false otherwise
+	* @param handshakeSignature Handshake to use if "useHandshake" is true
+	* @throws IOException On general IO errors
+	* @throws GeneralSecurityException On SSL errors
+	*/
+	public SocketConnector(String host, int port, Encryption encryption, boolean useHandshake, int handshakeSignature) throws IOException, GeneralSecurityException {
 		this(host, port, null, encryption, useHandshake, handshakeSignature);
 	}
 
-	
-	/**
-	 * @param host Host to connect to, must not be null
-	 * @param port Port to connect to, must be > 0
-	 * @param encryption Encryption to use, or null
-	 * @throws IOException On general IO errors
-	 * @throws GeneralSecurityException On SSL errors
-	 */
-	public SocketConnector(String host, int port, Encryption encryption) throws IOException, GeneralSecurityException { 
+/**
+	* @param host Host to connect to, must not be null
+	* @param port Port to connect to, must be > 0
+	* @param encryption Encryption to use, or null
+	* @throws IOException On general IO errors
+	* @throws GeneralSecurityException On SSL errors
+	*/
+	public SocketConnector(String host, int port, Encryption encryption) throws IOException, GeneralSecurityException {
 		this(host, port, null, encryption, false, -1);
 	}
-	
-	
-	/**
-	 * @param host Host to connect to, must not be null
-	 * @param port Port to connect to, must be > 0
-	 * @throws IOException On general IO errors
-	 * @throws GeneralSecurityException On SSL errors
-	 */
-	public SocketConnector(String host, int port) throws IOException, GeneralSecurityException { 
+
+/**
+	* @param host Host to connect to, must not be null
+	* @param port Port to connect to, must be > 0
+	* @throws IOException On general IO errors
+	* @throws GeneralSecurityException On SSL errors
+	*/
+	public SocketConnector(String host, int port) throws IOException, GeneralSecurityException {
 		this(host, port, null, Encryption.NONE, false, -1);
 	}
-	
-	
-	/**
-	 * This object waits for the session key to arrive when created
-	 * with native firebase encryption enabled. This method specifies
-	 * the default wait for the session key in milliseconds. Set to -1
-	 * to disable waiting.
-	 * 
-	 * @param millis Millis to wait for session key, or -1 for no wait
-	 */
+
+/**
+	* This object waits for the session key to arrive when created
+	* with native firebase encryption enabled. This method specifies
+	* the default wait for the session key in milliseconds. Set to -1
+	* to disable waiting.
+	* 
+	* @param millis Millis to wait for session key, or -1 for no wait
+	*/
 	public void setKeyExchangeWait(long millis) {
 		this.keyExchangeWait = millis;
 	}
-	
-	
-	/* (non-Javadoc)
-	 * @see com.cubeia.firebase.clients.java.connector.Connector#connect()
+
+	/*
+	 * (non-Javadoc)
+	 * @see
+	 * com.cubeia.firebase.clients.java.connector.Connector#connect()
 	 */
 	public void connect() throws IOException, GeneralSecurityException {
 		try {
 			socket = createSocket(host, port);
-		} catch (Exception ex) { }
-		dataInputStream = new DataInputStream(socket.openInputStream());		
+		} catch (Exception ex) {
+		}
+		dataInputStream = new DataInputStream(socket.openInputStream());
 		reader = new StreamReader(dataInputStream);
-		
+
 		dataOutputStream = new DataOutputStream(socket.openDataOutputStream());
 		writer = new StreamWriter(dataOutputStream);
-		
+
 		//reader.setDaemon(true);
 		reader.start();
 		checkSendHandshake();
-		checkSendKeyExchange();	
+		checkSendKeyExchange();
 	}
 
-	/* (non-Javadoc)
-	 * @see com.cubeia.firebase.clients.java.connector.Connector#send(com.cubeia.firebase.io.ProtocolObject)
+	/*
+	 * (non-Javadoc)
+	 * @see
+	 * com.cubeia.firebase.clients.java.connector.Connector#send(com.cubeia.firebase.io.ProtocolObject)
 	 */
 	public void send(ProtocolObject packet) {
 		Arguments.notNull(packet, "packet");
 		writer.sendPacket(packet);
 	}
 
-	/* (non-Javadoc)
-	 * @see com.cubeia.firebase.clients.java.connector.Connector#disconnect()
+	public ProtocolObject read() throws IOException {
+		return reader.readPacket();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see
+	 * com.cubeia.firebase.clients.java.connector.Connector#disconnect()
 	 */
 	public void disconnect() {
 		dispatcher.complete();
@@ -179,43 +168,19 @@ public class SocketConnector extends ConnectorBase {
 		writer.close();
 		closeSocket();
 	}
-	
-	/* (non-Javadoc)
-	 * @see com.cubeia.firebase.clients.java.connector.Connector#isConnected()
+
+	/*
+	 * (non-Javadoc)
+	 * @see
+	 * com.cubeia.firebase.clients.java.connector.Connector#isConnected()
 	 */
 	public boolean isConnected() {
 		return (socket != null);
 	}
-	
-	// --- PROTECTED METHODS --- //
-	
-	/**
-	 * Return a socket factory for SSL encryption. This could be either a naive encryption
-	 * or a standard encryption, decided by the enumeration parameter.
-	 * 
-	 * @param e Encryption type, never null
-	 * @return A new socket factory, never null
-	 
-	protected SocketFactory getSSLSocketFactory(Encryption e) throws GeneralSecurityException {
-		if(e == Encryption.NAIVE_SSL) {
-			TrustManager[] tm = new TrustManager[] { new NaiveTrustManager() };
-			SSLContext context = SSLContext.getInstance("SSL");
-		    context.init(null, tm, null);
-		    return context.getSocketFactory();
-		} else {
-			return SSLSocketFactory.getDefault();
-		}
-	}*/
-	
-	/**
-	 * This method simply logs the exception. Override to specify additional
-	 * behaviour.
-	 * 
-	 * @param e The read exception, never null
-	 */
+
 	protected void handleReadException(Exception e) {
-		if(e instanceof IOException) {
-			if(e instanceof EOFException) {
+		if (e instanceof IOException) {
+			if (e instanceof EOFException) {
 				log.log(Level.SEVERE, "Remote connection closed");
 			} else {
 				log.log(Level.SEVERE, "Faile to read packet", e);
@@ -226,28 +191,27 @@ public class SocketConnector extends ConnectorBase {
 			log.log(Level.SEVERE, "Unknown error", e);
 		}
 	}
-	
-	
+
 	// --- PRIVATE METHODS --- //
-	
 	private void checkSendKeyExchange() throws GeneralSecurityException {
-		if(encryption == Encryption.FIREBASE_NATIVE) {
+		if (encryption == Encryption.FIREBASE_NATIVE) {
 			this.keyExchange = RSACryptoProvider.generateRSAKey();
 			EncryptedTransportPacket p = new EncryptedTransportPacket();
 			p.func = CryptoConstants.SESSION_KEY_REQUEST;
-			String key = ((RSAKeyParameters)keyExchange.getPublic()).getModulus().toString(16);
+			String key = ((RSAKeyParameters) keyExchange.getPublic()).getModulus().toString(16);
 			p.payload = key.getBytes(); // CHARSET ?!
 			log.info("Sending session key request (RSA)");
 			send(p);
-			if(keyExchangeWait >= 0) {
+			if (keyExchangeWait >= 0) {
 				log.info("Waiting for session key exchange to finnish for " + keyExchangeWait + " millis");
-				synchronized(keyExchange) {
-					if(crypto.get() == null) {
+				synchronized (keyExchange) {
+					if (crypto.get() == null) {
 						try {
 							keyExchange.wait(keyExchangeWait);
-						} catch(InterruptedException e) { }
-						
-						if(crypto.get() == null) {
+						} catch (InterruptedException e) {
+						}
+
+						if (crypto.get() == null) {
 							log.log(Level.WARNING, "Key exchange not finished; No package will be encrypted until session key arrives");
 						}
 					}
@@ -259,11 +223,11 @@ public class SocketConnector extends ConnectorBase {
 	}
 
 	private void checkSendHandshake() throws IOException {
-		if(useHandshake) {
+		if (useHandshake) {
 			writer.sendHandshake();
 		}
 	}
-	
+
 	private void closeSocket() {
 		try {
 			socket.close();
@@ -271,9 +235,9 @@ public class SocketConnector extends ConnectorBase {
 			log.log(Level.SEVERE, "Failed to close connector", e);
 		}
 	}
-	
+
 	private void dispatch(final ProtocolObject packet) throws IOException, GeneralSecurityException {
-		if(packet instanceof EncryptedTransportPacket) {
+		if (packet instanceof EncryptedTransportPacket) {
 			/*
 			 * We'll be slightly naive here, we'll assume that 
 			 * the first encrypted packet is the key...
@@ -304,7 +268,7 @@ public class SocketConnector extends ConnectorBase {
 			doFinalDispatch(packet);
 		}
 	}
-	
+
 	private void doFinalDispatch(final ProtocolObject packet) {
 		dispatcher.assign(new Runnable() {
 
@@ -321,16 +285,14 @@ public class SocketConnector extends ConnectorBase {
 		if (encryption == Encryption.NAIVE_SSL || encryption == Encryption.SSL) {
 			throw new Exception("Not support SSL yet");
 		} else {
-			SocketConnection conn = (SocketConnection) javax.microedition.io.Connector.open("socket://" + host + ":" + port);
+			SocketConnection conn = (SocketConnection) Connector.open("socket://" + host + ":" + port);
 			conn.setSocketOption(SocketConnection.DELAY, 0);
 			conn.setSocketOption(SocketConnection.KEEPALIVE, 0);
 			return conn;
 		}
 	}
 
-	
 	// --- PRIVATE CLASSES --- //
-	
 	private class StreamReader extends Thread {
 
 		private final DataInputStream in;
@@ -342,24 +304,18 @@ public class SocketConnector extends ConnectorBase {
 		}
 
 		public void run() {
+			doRead();
 			try {
-				doRead();
 				doClose();
 			} catch (IOException ex) {
-				//TODO
 			}
 		}
 
 		public void close() {
 			flag.set(false);
-			/*try {
-				join();
-			} catch (InterruptedException e) { }*/
 		}
-		
-		
-		// --- PRIVATE METHODS --- //
 
+		// --- PRIVATE METHODS --- //
 		private void doClose() throws IOException {
 			in.close();
 			//IoUtil.safeClose(in);
@@ -399,6 +355,7 @@ public class SocketConnector extends ConnectorBase {
 		private ByteBuffer toByteBuffer(int len, byte[] arr) {
 			ByteBuffer buf = ByteBuffer.allocateDirect(len);
 			buf.putInt(len);
+			buf.position(buf.position() * 4);
 			buf.put(arr);
 			buf.rewind();
 			return buf;

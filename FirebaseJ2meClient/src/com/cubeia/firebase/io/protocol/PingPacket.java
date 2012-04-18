@@ -1,63 +1,53 @@
-// Decompiled by DJ v3.10.10.93 Copyright 2007 Atanas Neshkov  Date: 4/16/2012 11:58:16 AM
-// Home Page: http://members.fortunecity.com/neshkov/dj.html  http://www.neshkov.com/dj.html - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   PingPacket.java
-
+// I AM AUTO-GENERATED, DON'T CHECK ME INTO SUBVERSION (or else...)
 package com.cubeia.firebase.io.protocol;
 
-import com.cubeia.firebase.io.*;
+import com.cubeia.firebase.io.PacketInputStream;
+import com.cubeia.firebase.io.PacketOutputStream;
+import com.cubeia.firebase.io.ProtocolObject;
+import com.cubeia.firebase.io.ProtocolObjectVisitor;
+import com.cubeia.firebase.io.Visitable;
 import j2me.lang.StringBuilder;
 import java.io.IOException;
 
-// Referenced classes of package com.cubeia.firebase.io.protocol:
-//            PacketVisitor
+public final class PingPacket implements ProtocolObject, Visitable {
 
-public final class PingPacket
-    implements ProtocolObject, Visitable
-{
+	public int classId() {
+		return 7;
+	}
 
-    public int classId()
-    {
-        return 7;
-    }
+	public void accept(ProtocolObjectVisitor visitor) {
+		if (visitor instanceof PacketVisitor) {
+			PacketVisitor handler = (PacketVisitor) visitor;
+			handler.visit(this);
+		}
+	}
+	public int id;
 
-    public void accept(ProtocolObjectVisitor visitor)
-    {
-        if(visitor instanceof PacketVisitor)
-        {
-            PacketVisitor handler = (PacketVisitor)visitor;
-            handler.visit(this);
-        }
-    }
+	/**
+	 * Default
+	 * constructor.
+	 *
+	 */
+	public PingPacket() {
+		// Nothing here
+	}
 
-    public PingPacket()
-    {
-    }
+	public PingPacket(int id) {
+		this.id = id;
+	}
 
-    public PingPacket(int id)
-    {
-        this.id = id;
-    }
+	public void save(PacketOutputStream ps) throws IOException {
+		ps.saveInt(id);
+	}
 
-    public void save(PacketOutputStream ps)
-        throws IOException
-    {
-        ps.saveInt(id);
-    }
+	public void load(PacketInputStream ps) throws IOException {
+		id = ps.loadInt();
+	}
 
-    public void load(PacketInputStream ps)
-        throws IOException
-    {
-        id = ps.loadInt();
-    }
-
-    public String toString()
-    {
-        StringBuilder result = new StringBuilder();
-				result.append("PingPacket :");
-        result.append((new StringBuilder()).append(" id[").append(id).append("]").toString());
-        return result.toString();
-    }
-
-    public int id;
+	public String toString() {
+		StringBuilder result = new StringBuilder();
+		result.append("PingPacket :");
+		result.append(" id[" + id + "]");
+		return result.toString();
+	}
 }

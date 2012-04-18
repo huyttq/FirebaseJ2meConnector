@@ -1,122 +1,103 @@
-// Decompiled by DJ v3.10.10.93 Copyright 2007 Atanas Neshkov  Date: 4/16/2012 11:48:28 AM
-// Home Page: http://members.fortunecity.com/neshkov/dj.html  http://www.neshkov.com/dj.html - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   PacketOutputStream.java
-
+/**
+ * Copyright 2009 Cubeia Ltd  
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.cubeia.firebase.io;
 
-import j2me.lang.StringBuilder;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public final class PacketOutputStream
-{
+/**
+ * Handles the serialization of the Styx wire format.
+ */
+public final class PacketOutputStream {
+    /** maximum string legnth in bytes */
+    public static final int STRING_MAX_BYTES = 0xffff;
+    
+    private DataOutputStream os;
 
-    public PacketOutputStream(DataOutputStream os)
-    {
+    public PacketOutputStream(DataOutputStream os) {
         this.os = os;
     }
 
-    public void saveByte(byte val)
-        throws IOException
-    {
+    public void saveByte(byte val) throws IOException {
         os.writeByte(val);
     }
 
-    public void saveUnsignedByte(int val)
-        throws IOException
-    {
+    public void saveUnsignedByte(int val) throws IOException {
         os.writeByte(val);
     }
 
-    public void saveUnsignedShort(int val)
-        throws IOException
-    {
+    public void saveUnsignedShort(int val) throws IOException {
         os.writeShort(val);
     }
 
-    public void saveShort(short val)
-        throws IOException
-    {
+    public void saveShort(short val) throws IOException {
         os.writeShort(val);
     }
 
-    public void saveInt(int val)
-        throws IOException
-    {
+    public void saveInt(int val) throws IOException {
         os.writeInt(val);
     }
-
-    public void saveUnsignedInt(long val)
-        throws IOException
-    {
-        os.write((byte)(int)(255L & val >>> 24));
-        os.write((byte)(int)(255L & val >>> 16));
-        os.write((byte)(int)(255L & val >>> 8));
-        os.write((byte)(int)(255L & val));
+    
+    public void saveUnsignedInt(long val) throws IOException {
+        os.write((byte) (0xff & val >>> 24));
+        os.write((byte) (0xff & val >>> 16));
+        os.write((byte) (0xff & val >>> 8));
+        os.write((byte) (0xff & val));
     }
-
-    public void saveLong(long val)
-        throws IOException
-    {
+    
+    public void saveLong(long val) throws IOException {
         os.writeLong(val);
     }
 
-    public void saveBoolean(boolean val)
-        throws IOException
-    {
+    public void saveBoolean(boolean val) throws IOException {
         os.writeByte(val ? 1 : 0);
     }
 
-    public void saveString(String val)
-        throws IOException
-    {
-        if(val == null)
-            val = "";
-        byte utf8[] = val.getBytes("UTF-8");
-        if(utf8.length > 65535)
-        {
-            throw new IOException((new StringBuilder()).append("String byte length is too long: bytes = ").append(utf8.length).append(", max allowed = ").append(65535).toString());
-        } else
-        {
-            os.writeShort(utf8.length);
-            os.write(utf8, 0, utf8.length);
-            return;
+    /**
+     * Save the given string. 
+     * An {@link IOException} will be thrown if the number of bytes of the string encoded in 
+     * UTF-8 is greater than {@link #STRING_MAX_BYTES}.
+     * @param val the string
+     * @throws IOException if the number of UTF-8 bytes of the string is >= {@link #STRING_MAX_BYTES}
+     */
+    public void saveString(String val) throws IOException {
+    	if (val == null) val = "";
+        byte[] utf8 = val.getBytes("UTF-8");
+        
+        if (utf8.length > STRING_MAX_BYTES) {
+            throw new IOException("String byte length is too long: bytes = " + utf8.length + ", max allowed = " + 0xffff);
         }
+        
+        os.writeShort(utf8.length);
+        os.write(utf8, 0, utf8.length);
     }
 
-    public void saveArray(byte gamedata[])
-        throws IOException
-    {
-        os.write(gamedata);
-    }
+	public void saveArray(byte[] gamedata) throws IOException {
+		os.write(gamedata);
+	}
+	
+	public void saveArray(int[] data) throws IOException {
+		for(int i = 0; i < data.length; i++) {
+			os.writeInt(data[i]);
+		}
+	}
 
-    public void saveArray(int data[])
-        throws IOException
-    {
-        int arr$[] = data;
-        int len$ = arr$.length;
-        for(int i$ = 0; i$ < len$; i$++)
-        {
-            int val = arr$[i$];
-            os.writeInt(val);
-        }
-
-    }
-
-    public void saveArray(String removedParams[])
-        throws IOException
-    {
-        String arr$[] = removedParams;
-        int len$ = arr$.length;
-        for(int i$ = 0; i$ < len$; i$++)
-        {
-            String name = arr$[i$];
-            saveString(name);
-        }
-
-    }
-
-    public static final int STRING_MAX_BYTES = 65535;
-    private DataOutputStream os;
+	public void saveArray(String[] removedParams) throws IOException {
+		for(int i = 0; i < removedParams.length; i++) {
+			saveString(removedParams[i]);
+		}
+	}
 }
