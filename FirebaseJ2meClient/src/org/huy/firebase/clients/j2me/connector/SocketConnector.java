@@ -355,7 +355,7 @@ public class SocketConnector extends ConnectorBase {
 		private ByteBuffer toByteBuffer(int len, byte[] arr) {
 			ByteBuffer buf = ByteBuffer.allocateDirect(len);
 			buf.putInt(len);
-			buf.position(buf.position() * 4);
+			buf.position(buf.position() + 3);
 			buf.put(arr);
 			buf.rewind();
 			return buf;
