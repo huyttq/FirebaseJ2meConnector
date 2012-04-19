@@ -6,8 +6,8 @@ package org.huy.firebase.clients.j2me.connector;
 
 import com.cubeia.firebase.clients.java.connector.CryptoConstants;
 import java.security.GeneralSecurityException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
+import j2me.security.SecureRandom;
+import j2me.util.ArrayList;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.engines.RSAEngine;
@@ -36,7 +36,8 @@ public class RSACryptoProvider {
 	
 	public static AsymmetricCipherKeyPair generateRSAKey() throws GeneralSecurityException {
 		RSAKeyPairGenerator generator = new RSAKeyPairGenerator();
-		RSAKeyGenerationParameters spec = new RSAKeyGenerationParameters(CryptoConstants.RSA_KEY_EXPONENT, new SecureRandom(), CryptoConstants.RSA_KEY_SIZE, 80);
+		SecureRandom sr = new SecureRandom();
+		RSAKeyGenerationParameters spec = new RSAKeyGenerationParameters(CryptoConstants.RSA_KEY_EXPONENT, sr, CryptoConstants.RSA_KEY_SIZE, 80);
 		generator.init(spec);		
 		return generator.generateKeyPair();
 	}
