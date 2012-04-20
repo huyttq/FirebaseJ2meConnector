@@ -14,10 +14,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.huy.firebase.clients.j2me.connector;
+package com.cubeia.firebase.clients.java.connector;
 
 import com.cubeia.firebase.api.util.Arguments;
-import com.cubeia.firebase.clients.java.connector.*;
 import com.cubeia.firebase.io.ProtocolObject;
 import com.cubeia.firebase.io.StyxSerializer;
 import com.cubeia.firebase.io.protocol.EncryptedTransportPacket;

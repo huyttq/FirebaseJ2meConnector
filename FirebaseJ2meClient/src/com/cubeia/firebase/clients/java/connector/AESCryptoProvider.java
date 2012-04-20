@@ -1,7 +1,5 @@
-package org.huy.firebase.clients.j2me.connector;
+package com.cubeia.firebase.clients.java.connector;
 
-import com.cubeia.firebase.clients.java.connector.CryptoProvider;
-import com.cubeia.firebase.clients.java.connector.SessionKey;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;

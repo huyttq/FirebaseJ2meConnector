@@ -17,11 +17,12 @@
 package com.cubeia.firebase.clients.java.connector;
 
 public class Encryption {
-	
-        private int value;
-        public Encryption (int val) {
-            value = val;
-        }
+
+	private int value;
+
+	public Encryption(int val) {
+		value = val;
+	}
 	/**
 	 * No encryption.
 	 */

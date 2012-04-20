@@ -14,11 +14,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.huy.firebase.clients.j2me.connector;
+package com.cubeia.firebase.clients.java.connector;
 
-import com.cubeia.firebase.clients.java.connector.ConnectorFactory;
-import com.cubeia.firebase.clients.java.connector.FirebaseConnector;
-import com.cubeia.firebase.clients.java.connector.SecurityConfig;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 

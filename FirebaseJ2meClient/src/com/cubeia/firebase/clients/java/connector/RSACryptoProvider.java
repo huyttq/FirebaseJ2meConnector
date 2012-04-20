@@ -1,13 +1,8 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package org.huy.firebase.clients.j2me.connector;
+package com.cubeia.firebase.clients.java.connector;
 
-import com.cubeia.firebase.clients.java.connector.CryptoConstants;
-import java.security.GeneralSecurityException;
 import j2me.security.SecureRandom;
 import j2me.util.ArrayList;
+import java.security.GeneralSecurityException;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.engines.RSAEngine;
@@ -17,7 +12,7 @@ import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 /**
  *
  * @author
- * Linh
+ * Huy Thai
  */
 public class RSACryptoProvider {
 	private RSAEngine engine;
