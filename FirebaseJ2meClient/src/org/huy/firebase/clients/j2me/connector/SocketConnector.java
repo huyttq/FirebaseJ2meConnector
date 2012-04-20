@@ -17,23 +17,22 @@
 package org.huy.firebase.clients.j2me.connector;
 
 import com.cubeia.firebase.api.util.Arguments;
-import com.cubeia.firebase.clients.java.connector.*;
+import com.cubeia.firebase.clients.java.connector.ConnectorBase;
+import com.cubeia.firebase.clients.java.connector.Encryption;
+import com.cubeia.firebase.clients.java.connector.PacketListener;
 import com.cubeia.firebase.io.ProtocolObject;
 import com.cubeia.firebase.io.StyxSerializer;
-import com.cubeia.firebase.io.protocol.EncryptedTransportPacket;
 import com.cubeia.firebase.io.protocol.ProtocolObjectFactory;
 import com.jmobilecore.comm.BufferedInputStream;
 import com.jmobilecore.comm.BufferedOutputStream;
 import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicBoolean;
-import edu.emory.mathcs.backport.java.util.concurrent.atomic.AtomicReference;
 import j2me.nio.ByteBuffer;
 import j2me.util.logging.Level;
 import java.io.*;
 import java.security.GeneralSecurityException;
 import javax.microedition.io.Connector;
+import javax.microedition.io.SecureConnection;
 import javax.microedition.io.SocketConnection;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.params.RSAKeyParameters;
 
 public class SocketConnector extends ConnectorBase {
 
@@ -42,11 +41,7 @@ public class SocketConnector extends ConnectorBase {
 	private StreamReader reader;
 	private StreamWriter writer;
 	private final Encryption encryption;
-	private AsymmetricCipherKeyPair keyExchange;
-	//AES cryptoProvider
-	private AtomicReference crypto = new AtomicReference(null);
-	private RSACryptoProvider rsaCrypto = new RSACryptoProvider();
-	private long keyExchangeWait = CryptoConstants.DEFAULT_KEY_ECHANGE_WAIT;
+	
 	private final String host;
 	private final int port;
 	// use OutputStream to send requests
@@ -116,10 +111,10 @@ public class SocketConnector extends ConnectorBase {
 	* to disable waiting.
 	* 
 	* @param millis Millis to wait for session key, or -1 for no wait
-	*/
+	
 	public void setKeyExchangeWait(long millis) {
 		this.keyExchangeWait = millis;
-	}
+	}*/
 
 	/*
 	 * (non-Javadoc)
@@ -137,10 +132,9 @@ public class SocketConnector extends ConnectorBase {
 		dataOutputStream = new DataOutputStream(socket.openDataOutputStream());
 		writer = new StreamWriter(dataOutputStream);
 
-		//reader.setDaemon(true);
 		reader.start();
 		checkSendHandshake();
-		checkSendKeyExchange();
+		//checkSendKeyExchange();
 	}
 
 	/*
@@ -192,36 +186,6 @@ public class SocketConnector extends ConnectorBase {
 		}
 	}
 
-	// --- PRIVATE METHODS --- //
-	private void checkSendKeyExchange() throws GeneralSecurityException {
-		if (encryption == Encryption.FIREBASE_NATIVE) {
-			this.keyExchange = RSACryptoProvider.generateRSAKey();
-			EncryptedTransportPacket p = new EncryptedTransportPacket();
-			p.func = CryptoConstants.SESSION_KEY_REQUEST;
-			String key = ((RSAKeyParameters) keyExchange.getPublic()).getModulus().toString(16);
-			p.payload = key.getBytes(); // CHARSET ?!
-			log.info("Sending session key request (RSA)");
-			send(p);
-			if (keyExchangeWait >= 0) {
-				log.info("Waiting for session key exchange to finnish for " + keyExchangeWait + " millis");
-				synchronized (keyExchange) {
-					if (crypto.get() == null) {
-						try {
-							keyExchange.wait(keyExchangeWait);
-						} catch (InterruptedException e) {
-						}
-
-						if (crypto.get() == null) {
-							log.log(Level.WARNING, "Key exchange not finished; No package will be encrypted until session key arrives");
-						}
-					}
-				}
-			} else {
-				log.log(Level.WARNING, "Key exchange not finished, no package should be sent until session key has arrived");
-			}
-		}
-	}
-
 	private void checkSendHandshake() throws IOException {
 		if (useHandshake) {
 			writer.sendHandshake();
@@ -237,36 +201,7 @@ public class SocketConnector extends ConnectorBase {
 	}
 
 	private void dispatch(final ProtocolObject packet) throws IOException, GeneralSecurityException {
-		if (packet instanceof EncryptedTransportPacket) {
-			/*
-			 * We'll be slightly naive here, we'll assume that 
-			 * the first encrypted packet is the key...
-			 */
-			EncryptedTransportPacket wrap = (EncryptedTransportPacket) packet;
-			if (wrap.func == CryptoConstants.SESSION_KEY_RESPONSE) {
-				synchronized (keyExchange) {
-					byte[] decrypted = rsaCrypto.decrypt(wrap.payload, keyExchange.getPrivate());
-
-					SessionKey key = new SessionKey(decrypted);
-					crypto.set(new AESCryptoProvider());
-					((AESCryptoProvider) crypto.get()).setSessionKey(key);
-					keyExchange.notifyAll();
-				}
-			} else if (wrap.func == CryptoConstants.ENCRYPTED_DATA) {
-				if (crypto.get() == null) {
-					throw new IllegalStateException("Received encrypted data before session key");
-				}
-				byte[] decrypted = ((AESCryptoProvider) crypto.get()).decrypt(wrap.payload);
-				ProtocolObject unpacked = styx.unpack(ByteBuffer.wrap(decrypted));
-				doFinalDispatch(unpacked);
-			} else if (wrap.func == CryptoConstants.ENCRYPTION_MANDATORY) {
-				log.log(Level.SEVERE, "Server demands native Firebase packet encryption, but client is using " + encryption);
-			} else {
-				throw new IllegalStateException("Illegal ecrypted package function: " + wrap.func);
-			}
-		} else {
-			doFinalDispatch(packet);
-		}
+		doFinalDispatch(packet);
 	}
 
 	private void doFinalDispatch(final ProtocolObject packet) {
@@ -282,14 +217,15 @@ public class SocketConnector extends ConnectorBase {
 	}
 
 	private SocketConnection createSocket(String host, int port) throws IOException, GeneralSecurityException, Exception {
+		SocketConnection conn;
 		if (encryption == Encryption.NAIVE_SSL || encryption == Encryption.SSL) {
-			throw new Exception("Not support SSL yet");
+			conn = (SecureConnection) Connector.open("ssl://" + host + ":" + port);
 		} else {
-			SocketConnection conn = (SocketConnection) Connector.open("socket://" + host + ":" + port);
-			conn.setSocketOption(SocketConnection.DELAY, 0);
-			conn.setSocketOption(SocketConnection.KEEPALIVE, 0);
-			return conn;
+			conn = (SocketConnection) Connector.open("socket://" + host + ":" + port);						
 		}
+		conn.setSocketOption(SocketConnection.DELAY, 0);
+		conn.setSocketOption(SocketConnection.KEEPALIVE, 0);
+		return conn;
 	}
 
 	// --- PRIVATE CLASSES --- //
@@ -318,7 +254,6 @@ public class SocketConnector extends ConnectorBase {
 		// --- PRIVATE METHODS --- //
 		private void doClose() throws IOException {
 			in.close();
-			//IoUtil.safeClose(in);
 		}
 
 		private void doRead() {
@@ -372,7 +307,6 @@ public class SocketConnector extends ConnectorBase {
 
 		public void close() {
 			try {
-				//IoUtil.safeClose(out);
 				out.close();
 			} catch (IOException ex) {
 				//TODO
@@ -381,10 +315,6 @@ public class SocketConnector extends ConnectorBase {
 
 		public void sendPacket(ProtocolObject packet) {
 			try {
-				if (crypto.get() != null) {
-					packet = encrypt(packet);
-				}
-
 				ByteBuffer buffer = styx.pack(packet);
 				byte[] array = buffer.array();
 				out.write(array);
@@ -392,16 +322,6 @@ public class SocketConnector extends ConnectorBase {
 			} catch (Exception ex) {
 				log.log(Level.SEVERE, "Faile to write packet", ex);
 			}
-		}
-
-		private ProtocolObject encrypt(ProtocolObject packet) throws IOException, GeneralSecurityException {
-			ByteBuffer buffer = styx.pack(packet);
-			byte[] array = buffer.array();
-			byte[] encrypted = ((AESCryptoProvider) crypto.get()).encrypt(array);
-			EncryptedTransportPacket p = new EncryptedTransportPacket();
-			p.func = CryptoConstants.ENCRYPTED_DATA;
-			p.payload = encrypted;
-			return p;
 		}
 
 		public void sendHandshake() throws IOException {

@@ -17,11 +17,12 @@
 package com.cubeia.firebase.clients.java.connector;
 
 public class Encryption {
-	
-        private int value;
-        public Encryption (int val) {
-            value = val;
-        }
+
+	private int value;
+
+	public Encryption(int val) {
+		value = val;
+	}
 	/**
 	 * No encryption.
 	 */
@@ -40,7 +41,7 @@ public class Encryption {
 	
 	/**
 	 * Use Firebase native packet encryption.
-	 */
+	Not support this yet
 	public static final Encryption FIREBASE_NATIVE = new Encryption(3);
-
+	*/
 }
