@@ -9,8 +9,6 @@ import com.cubeia.firebase.io.Visitable;
 import com.cubeia.firebase.styx.util.ArrayUtils;
 import j2me.lang.StringBuilder;
 
-import java.util.List;
-import java.util.ArrayList;
 import java.io.IOException;
 
 public final class EncryptedTransportPacket implements ProtocolObject, Visitable {

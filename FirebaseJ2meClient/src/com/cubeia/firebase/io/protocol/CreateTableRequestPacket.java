@@ -4,8 +4,8 @@ package com.cubeia.firebase.io.protocol;
 import com.cubeia.firebase.io.*;
 import j2me.lang.StringBuilder;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import j2me.util.ArrayList;
+import j2me.util.List;
 
 public final class CreateTableRequestPacket implements ProtocolObject, Visitable {
 

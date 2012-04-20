@@ -33,7 +33,9 @@ public class SessionKey implements Key {
 	}
 
 	public byte[] getEncoded() {
-		return (byte[])key.clone();
+		byte[] clonedKey = new byte[key.length];
+		System.arraycopy(key, 0, clonedKey, 0, key.length);
+		return clonedKey;
 	}
 
 	public String getFormat() {

@@ -8,8 +8,8 @@ import com.cubeia.firebase.io.ProtocolObjectVisitor;
 import com.cubeia.firebase.io.Visitable;
 import j2me.lang.StringBuilder;
 
-import java.util.List;
-import java.util.ArrayList;
+import j2me.util.List;
+import j2me.util.ArrayList;
 import java.io.IOException;
 
 public final class TournamentUpdateListPacket implements ProtocolObject, Visitable {
